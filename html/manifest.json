@@ -1,7 +1,7 @@
 {
-    "name": "mtorrent",
-    "short_name": "mtorrent",
-    "description": "A pretty good torrent search app",
+    "name": "__app_name__",
+    "short_name": "__app_name__",
+    "description": "__app_description__",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#000c15",

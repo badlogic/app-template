@@ -18,7 +18,7 @@ services:
             dockerfile: Dockerfile
         stop_grace_period: 0s
         environment:
-            PORT: 3333
+            PORT: __app_server_port__
         volumes:
             - ./data:/data
             - ../:/app
