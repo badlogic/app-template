@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as crypto from "crypto";
 
 const error = (msg) => {
     console.error(msg);
@@ -12,6 +13,17 @@ const replaceInFile = (map, filePath) => {
         content = content.replace(regex, value);
     }
     fs.writeFileSync(filePath, content, "utf8");
+};
+
+const generateSecurePassword = (length = 32) => {
+    const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let password = "";
+    while (password.length < length) {
+        const byte = crypto.randomBytes(1);
+        const idx = byte[0] % charset.length;
+        password += charset.charAt(idx);
+    }
+    return password;
 };
 
 const pkg = JSON.parse(fs.readFileSync("package.json"));
@@ -28,7 +40,7 @@ if (!pkg.app.email) error("Missing email");
 if (!pkg.app.databaseName) error("Missing database name");
 if (!pkg.app.databaseUser) error("Missing database user");
 
-const dbPassword = pkg.app.name.toUpperCase() + "-DB_PASSWORD";
+const dbPassword = pkg.app.name.toUpperCase() + "_DB_PASSWORD";
 const secrets = `export ${dbPassword}=$${dbPassword}`;
 
 const replacements = new Map([
@@ -53,3 +65,8 @@ replaceInFile(replacements, "docker/docker-compose.prod.yml");
 replaceInFile(replacements, "docker/nginx.conf");
 replaceInFile(replacements, "html/index.html");
 replaceInFile(replacements, "html/manifest.json");
+
+console.log("ATTENTION!");
+console.log(`Please add an environment variable called ${dbPassword} to your environment\npermanently, and set it to a secure password.`);
+console.log("Here's a suggestion:");
+console.log(`echo 'export ${dbPassword}="${generateSecurePassword()}"' >> ~/.zshrc && source ~/.zshrc`);
