@@ -37,7 +37,7 @@ const pool = new Pool({
 });
 
 (async () => {
-    const result = connectWithRetry(5, 3000);
+    const result = await connectWithRetry(5, 3000);
     if (result instanceof Error) {
         process.exit(-1);
     }
@@ -52,7 +52,6 @@ const pool = new Pool({
     app.use(compression());
     app.use(bodyParser.urlencoded({ extended: true }));
 
-    const sids = new Map<string, string>();
     app.get("/api/hello", (req, res) => {
         res.json({ message: "Hello world" });
     });

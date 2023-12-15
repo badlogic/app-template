@@ -30,7 +30,7 @@ services:
         networks:
             - network
     db:
-        image: postgres
+        image: postgres:16-alpine
         restart: always
         environment:
             POSTGRES_DB: __app_db_name__
