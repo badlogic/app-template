@@ -19,6 +19,7 @@ console.log("Applying config", pkg.app);
 
 if (!pkg.app) error("No app config in package.json");
 if (!pkg.app.name) error("Missing name, e.g. MyApp");
+if (!pkg.app.description) error("Missing description, e.g. 'A super app'");
 if (!pkg.app.host) error("Missing host, e.g. myserver.hetzner.de");
 if (!pkg.app.hostDir) error("Missing host dir, e.g. /home/badlogic");
 if (!pkg.app.serverPort) error("Missing server port, e.g. 3333");
@@ -30,6 +31,7 @@ const secrets = pkg.app.secrets.length == 0 ? `echo "No secrets"` : pkg.app.secr
 
 const replacements = new Map([
     ["__app_name__", pkg.app.name],
+    ["__app_description__", pkg.app.description],
     ["__app_host__", pkg.app.host],
     ["__app_host_dir__", pkg.app.hostDir],
     ["__app_server_port__", pkg.app.serverPort],

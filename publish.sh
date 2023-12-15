@@ -2,7 +2,7 @@
 set -e
 npm run build
 host=__app_host__
-host_dir=__app_host_dir/__app_domain__
+host_dir=__app_host_dir__/__app_domain__
 current_date=$(date "+%Y-%m-%d %H:%M:%S")
 commit_hash=$(git rev-parse HEAD)
 echo "{\"date\": \"$current_date\", \"commit\": \"$commit_hash\"}" > html/version.json
