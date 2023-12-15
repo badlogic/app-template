@@ -142,7 +142,7 @@ export class Router {
     disableNavigation = false;
     private handleNavigation(ev: PopStateEvent) {
         if (this.disableNavigation) return;
-        if (ev.state.page >= this.currPage || !ev.state) {
+        if (ev.state.page > this.currPage || !ev.state) {
             this.currPage = ev.state.page;
             // Forward
             const route = this.matchRoute(location.pathname);
