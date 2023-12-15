@@ -39,3 +39,12 @@ const replacements = new Map([
 ]);
 
 console.log("Replacements", replacements);
+
+replaceInFile(replacements, "package.json");
+replaceInFile(replacements, "publish.sh");
+replaceInFile(replacements, "stats.sh");
+replaceInFile(replacements, "docker/docker-compose.base.yml");
+replaceInFile(replacements, "docker/docker-compose.prod.yml");
+replaceInFile(replacements, "docker/nginx.conf");
+replaceInFile(replacements, "html/index.html");
+replaceInFile(replacements, "html/manifest.json");
