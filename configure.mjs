@@ -7,6 +7,7 @@ const error = (msg) => {
 };
 
 const replaceInFile = (map, filePath) => {
+    console.log("Replacing placeholders in " + filePath);
     let content = fs.readFileSync(filePath, "utf8");
     for (const [key, value] of map.entries()) {
         const regex = new RegExp(key, "g");
@@ -37,11 +38,11 @@ if (!pkg.app.hostDir) error("Missing host dir, e.g. /home/badlogic");
 if (!pkg.app.serverPort) error("Missing server port, e.g. 3333");
 if (!pkg.app.domain) error("Missing domain, e.g. myapp.io");
 if (!pkg.app.email) error("Missing email");
-if (!pkg.app.databaseName) error("Missing database name");
-if (!pkg.app.databaseUser) error("Missing database user");
 
+const dbName = pkg.app.name.toUpperCase() + "_DB";
+const dbUser = pkg.app.name.toUpperCase() + "_DB_USER";
 const dbPassword = pkg.app.name.toUpperCase() + "_DB_PASSWORD";
-const secrets = `export ${dbPassword}=$${dbPassword}`;
+const secrets = `export ${dbName}=$${dbName} && export ${dbUser}=$${dbUser} && export ${dbPassword}=$${dbPassword}`;
 
 const replacements = new Map([
     ["__app_name__", pkg.app.name],
@@ -52,7 +53,9 @@ const replacements = new Map([
     ["__app_domain__", pkg.app.domain],
     ["__app_email__", pkg.app.email],
     ["__app_secrets__", secrets],
-    ["__app_db_password__", dbPassword],
+    ["__app_db_name__", "${" + dbName + "}"],
+    ["__app_db_user__", "${" + dbUser + "}"],
+    ["__app_db_password__", "${" + dbPassword + "}"],
 ]);
 
 console.log("Replacements", replacements);
@@ -63,10 +66,16 @@ replaceInFile(replacements, "stats.sh");
 replaceInFile(replacements, "docker/docker-compose.base.yml");
 replaceInFile(replacements, "docker/docker-compose.prod.yml");
 replaceInFile(replacements, "docker/nginx.conf");
+replaceInFile(replacements, "docker/control.sh");
 replaceInFile(replacements, "html/index.html");
 replaceInFile(replacements, "html/manifest.json");
 
 console.log("ATTENTION!");
-console.log(`Please add an environment variable called ${dbPassword} to your environment\npermanently, and set it to a secure password.`);
-console.log("Here's a suggestion:");
-console.log(`echo 'export ${dbPassword}="${generateSecurePassword()}"' >> ~/.zshrc && source ~/.zshrc`);
+console.log("Please add the following environment variables to your environment");
+console.log();
+console.log(`echo '' >> ~/.zshrc`);
+console.log(`echo '' >> ~/.zshrc`);
+console.log(`echo 'export ${dbName}="${dbName.toLowerCase()}"' >> ~/.zshrc`);
+console.log(`echo 'export ${dbUser}="${dbUser.toLowerCase()}"' >> ~/.zshrc`);
+console.log(`echo 'export ${dbPassword}="${generateSecurePassword()}"' >> ~/.zshrc`);
+console.log(`source ~/.zshrc`);

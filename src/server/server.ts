@@ -7,11 +7,47 @@ import * as fs from "fs";
 import * as http from "http";
 import multer from "multer";
 import WebSocket, { WebSocketServer } from "ws";
+import { Pool } from "pg";
 const upload = multer({ storage: multer.memoryStorage() });
 
 const port = process.env.PORT ?? 3333; //
+const dbName = process.env.DATABASE;
+if (!dbName) {
+    console.error("Environment variable DATABASE missing");
+    process.exit(-1);
+}
+const dbUser = process.env.DATABASE_USER;
+if (!dbUser) {
+    console.error("Environment variable DATABASE_USER missing");
+    process.exit(-1);
+}
+const dbPassword = process.env.DATABASE_PASSWORD;
+if (!dbPassword) {
+    console.error("Environment variable DATABASE_PASSWORD missing");
+    process.exit(-1);
+}
+
+const pool = new Pool({
+    host: "db",
+    database: dbName,
+    user: dbUser,
+    password: dbPassword,
+    port: 5432,
+});
 
 (async () => {
+    try {
+        const client = await pool.connect();
+        try {
+            const result = await client.query("SELECT NOW()");
+            console.log("Query result:", result.rows);
+        } finally {
+            client.release(); // Release the client back to the pool
+        }
+    } catch (err) {
+        console.error("Error during database connection or query", err);
+    }
+
     if (!fs.existsSync("docker/data")) {
         fs.mkdirSync("docker/data");
     }

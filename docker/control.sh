@@ -2,7 +2,7 @@
 
 set -e
 
-project=$(grep '"name"' package.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+project=__app_name__
 
 printHelp () {
 	echo "Usage: control.sh <command>"

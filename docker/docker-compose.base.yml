@@ -19,9 +19,14 @@ services:
         stop_grace_period: 0s
         environment:
             PORT: __app_server_port__
+            DATABASE: __app_db_name__
+            DATABASE_USER: __app_db_user__
+            DATABASE_PASSWORD: __app_db_password__
         volumes:
             - ./data:/data
             - ../:/app
+        links:
+            - db
         networks:
             - network
     db:

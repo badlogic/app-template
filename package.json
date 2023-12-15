@@ -8,9 +8,7 @@
     "hostDir": "/home/badlogic",
     "serverPort": 3333,
     "domain": "app.io",
-    "email": "badlogicgames@gmail.com",
-    "databaseName": "app_db",
-    "databaseUser": "app_user"
+    "email": "badlogicgames@gmail.com"
   },
   "scripts": {
     "prepare": "husky install",
