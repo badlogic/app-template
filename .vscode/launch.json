@@ -1,7 +1,4 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -10,10 +7,10 @@
             "port": 9230,
             "request": "attach",
             "address": "localhost",
-			"localRoot": "${workspaceFolder}/build",
-			"remoteRoot": "/app/build",
-			"restart": true,
-			"continueOnAttach": true
+            "localRoot": "${workspaceFolder}/build",
+            "remoteRoot": "/app/build",
+            "restart": true,
+            "continueOnAttach": true
         },
         {
             "type": "chrome",
@@ -21,6 +18,12 @@
             "name": "client",
             "url": "http://localhost:8080/",
             "webRoot": "${workspaceFolder}/html"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "dev",
+            "configurations": ["server", "client"]
         }
     ]
 }
