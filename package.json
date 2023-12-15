@@ -1,5 +1,5 @@
 {
-  "name": "mtorrent",
+  "name": "app",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -12,16 +12,7 @@
     "dev": "concurrently \"npx tsc --noEmit --preserveWatchOutput --watch\" \"npm run build:site -- --watch\" \"npm run build:css -- --watch\" \"npm run build:server -- --watch\" \"./docker/control.sh startdev\"",
     "build": "npm run build:css && npm run build:site && npm run build:server"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/badlogic/mtorrent.git"
-  },
-  "author": "",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/badlogic/mtorrent/issues"
-  },
-  "homepage": "https://github.com/badlogic/mtorrent#readme",
   "dependencies": {
     "body-parser": "^1.20.2",
     "chokidar": "^3.5.3",

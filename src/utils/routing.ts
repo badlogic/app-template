@@ -20,7 +20,7 @@ export class Route<T extends HTMLElement> {
 export class Router {
     pageStack: { route: Route<any>; page: HTMLElement; srcollTop: number; display: string }[] = [];
     routes: Route<any>[] = [];
-    authProvider = () => false;
+    authProvider = () => true;
     rootRoute = "/";
     notFoundRoot = "/404";
     currPage = 0;

@@ -2,7 +2,7 @@
 
 set -e
 
-project=mtorrent
+project=$(grep '"name"' package.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')
 
 printHelp () {
 	echo "Usage: control.sh <command>"

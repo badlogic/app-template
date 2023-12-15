@@ -3,6 +3,8 @@ import { customElement, property } from "lit/decorators.js";
 import { Api } from "../api.js";
 import { renderError } from "../app.js";
 import { i18n } from "../utils/i18n.js";
+import { router } from "../utils/routing.js";
+import { pageContainerStyle } from "../utils/styles.js";
 
 @customElement("main-page")
 export class MainPage extends LitElement {
@@ -15,6 +17,10 @@ export class MainPage extends LitElement {
     @property()
     error?: string;
 
+    protected createRenderRoot(): Element | ShadowRoot {
+        return this;
+    }
+
     protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
         super.firstUpdated(_changedProperties);
         this.load();
@@ -24,6 +30,7 @@ export class MainPage extends LitElement {
         try {
             const result = await Api.hello();
             if (result instanceof Error) throw result;
+            this.message = result.message;
         } catch (e) {
             this.error = i18n("Couldn't load mesage");
             return;
@@ -36,6 +43,11 @@ export class MainPage extends LitElement {
         if (this.isLoading) return html`<loading-spinner></loading-spinner>`;
         if (this.error) return renderError(this.error);
         if (!this.message) return renderError(i18n("Couldn't load mesage"));
-        return html`<h1>${this.message}</h1>`;
+        return html`<div class="${pageContainerStyle}">
+            <div class="flex flex-col gap-4">
+                <h1>${this.message}</h1>
+                <button class="btn self-start" @click=${() => router.push("/settings")}>Settings</button>
+            </div>
+        </div>`;
     }
 }

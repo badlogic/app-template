@@ -18,7 +18,7 @@ services:
             dockerfile: Dockerfile
         stop_grace_period: 0s
         environment:
-            MTORRENT_PWD: ${MTORRENT_PWD}
+            PORT: 3333
         volumes:
             - ./data:/data
             - ../:/app

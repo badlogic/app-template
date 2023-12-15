@@ -22,10 +22,13 @@ export class App extends LitElement {
     protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
         super.firstUpdated(_changedProperties);
         router.addRoute("/", () => {
-            return html`<loading-spinner></loading-spinner>`;
+            return html`<main-page></main-page>`;
         });
         router.addRoute("/404", () => renderError(i18n("Whoops, that page doesn't exist")));
+        router.addRoute("/settings", () => html`<settings-page></settings-page>`);
         router.setRootRoute("/");
         router.setNotFoundRoot("/404");
+
+        router.replace("/");
     }
 }

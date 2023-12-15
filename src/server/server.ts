@@ -10,7 +10,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import * as fs from "fs";
 const upload = multer({ storage: multer.memoryStorage() });
 
-const port = process.env.PORT ?? 3333;
+const port = process.env.PORT ?? 3333; //
 
 (async () => {
     if (!fs.existsSync("docker/data")) {

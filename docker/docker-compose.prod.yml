@@ -7,8 +7,6 @@ services:
             LETSENCRYPT_EMAIL: "badlogicgames@gmail.com"
         networks:
             - reverse_proxy
-    server:
-        container_name: mtorrent_server
 networks:
     reverse_proxy:
         external:
