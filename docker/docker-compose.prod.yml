@@ -1,0 +1,15 @@
+version: "3"
+services:
+    web:
+        environment:
+            VIRTUAL_HOST: mtorrent.io,www.mtorrent.io
+            LETSENCRYPT_HOST: mtorrent.io,www.mtorrent.io
+            LETSENCRYPT_EMAIL: "badlogicgames@gmail.com"
+        networks:
+            - reverse_proxy
+    server:
+        container_name: mtorrent_server
+networks:
+    reverse_proxy:
+        external:
+            name: nginx-proxy
