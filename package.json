@@ -1,11 +1,11 @@
 {
-  "name": "app",
+  "name": "__app_name__",
   "version": "1.0.0",
   "app": {
     "name": "app",
     "host": "marioslab.io",
     "hostDir": "/home/badlogic/",
-    "server_port": 3333,
+    "serverPort": 3333,
     "domain": "app.io",
     "email": "badlogicgames@gmail.com",
     "secrets": []
