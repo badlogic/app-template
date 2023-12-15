@@ -25,9 +25,11 @@ if (!pkg.app.hostDir) error("Missing host dir, e.g. /home/badlogic");
 if (!pkg.app.serverPort) error("Missing server port, e.g. 3333");
 if (!pkg.app.domain) error("Missing domain, e.g. myapp.io");
 if (!pkg.app.email) error("Missing email");
-if (!pkg.app.secrets) error("Missing secret env var names");
+if (!pkg.app.databaseName) error("Missing database name");
+if (!pkg.app.databaseUser) error("Missing database user");
 
-const secrets = pkg.app.secrets.length == 0 ? `echo "No secrets"` : pkg.app.secrets.map((secret) => `export ${secret}=$${secret}`).join(" && ");
+const dbPassword = pkg.app.name.toUpperCase() + "-DB_PASSWORD";
+const secrets = `export ${dbPassword}=$${dbPassword}`;
 
 const replacements = new Map([
     ["__app_name__", pkg.app.name],
@@ -38,6 +40,7 @@ const replacements = new Map([
     ["__app_domain__", pkg.app.domain],
     ["__app_email__", pkg.app.email],
     ["__app_secrets__", secrets],
+    ["__app_db_password__", dbPassword],
 ]);
 
 console.log("Replacements", replacements);

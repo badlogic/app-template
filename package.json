@@ -9,7 +9,8 @@
     "serverPort": 3333,
     "domain": "app.io",
     "email": "badlogicgames@gmail.com",
-    "secrets": []
+    "databaseName": "app_db",
+    "databaseUser": "app_user"
   },
   "scripts": {
     "prepare": "husky install",
