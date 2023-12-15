@@ -7,7 +7,8 @@
     "hostDir": "/home/badlogic/",
     "server_port": 3333,
     "domain": "app.io",
-    "email": "badlogicgames@gmail.com"
+    "email": "badlogicgames@gmail.com",
+    "secrets": []
   },
   "scripts": {
     "prepare": "husky install",

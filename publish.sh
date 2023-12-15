@@ -12,7 +12,7 @@ rsync -avz --exclude node_modules --exclude .git --exclude data --exclude docker
 
 if [ "$1" == "server" ]; then
     echo "Publishing client & server"
-    ssh -t $host "export MTORRENT_PWD=${MTORRENT_PWD} && cd $host_dir && ./docker/control.sh stop && ./docker/control.sh start && ./docker/control.sh logs"
+    ssh -t $host "__app_secrets__ && cd $host_dir && ./docker/control.sh stop && ./docker/control.sh start && ./docker/control.sh logs"
 else
     echo "Publishing client only"
 fi
