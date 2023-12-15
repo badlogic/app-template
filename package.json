@@ -5,7 +5,7 @@
     "name": "app",
     "description": "A super duper app",
     "host": "marioslab.io",
-    "hostDir": "/home/badlogic/",
+    "hostDir": "/home/badlogic",
     "serverPort": 3333,
     "domain": "app.io",
     "email": "badlogicgames@gmail.com",
