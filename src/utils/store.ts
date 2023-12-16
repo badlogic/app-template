@@ -1,7 +1,9 @@
-import { State } from "./state";
-
 export type DevPreferences = {
     enabled: boolean;
+};
+
+export type SynologyPreferences = {
+    downloadsFolder: string;
 };
 
 export type Theme = "dark" | "light";
@@ -58,7 +60,7 @@ export class Store {
 
     static setTheme(theme: Theme) {
         Store.set("settings", { ...Store.get<Settings>("settings"), theme });
-        State.notify("theme", "updated", theme);
+
         return theme;
     }
 
