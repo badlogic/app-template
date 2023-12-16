@@ -1,10 +1,10 @@
 import { LitElement, PropertyValueMap, TemplateResult, html, render } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
-import { arrowLeftIcon, arrowUpDoubleIcon, errorIcon, moonIcon, settingsIcon, spinnerIcon, sunIcon, upDownIcon } from "./icons";
-import { Store, Theme } from "./store.js";
-import { globalStyles } from "./styles.js";
+import { errorIcon, arrowUpDoubleIcon, spinnerIcon, upDownIcon, moonIcon, sunIcon, settingsIcon, arrowLeftIcon } from "./icons.js";
 import { router } from "./routing.js";
+import { Theme, Store } from "./store.js";
+import { globalStyles } from "./styles.js";
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
     if (container) {
@@ -171,7 +171,17 @@ export function isMobileBrowser(): boolean {
     const mobileRegex =
         /android|avantgo|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od|ad)|iris|kindle|lge |maemo|midp|mini|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i;
 
-    return mobileRegex.test(userAgent);
+    // Check if it's a mobile device based on the user agent
+    if (mobileRegex.test(userAgent)) {
+        return true;
+    }
+
+    // Additional check for iOS devices requesting desktop site
+    const isIOSRequestingDesktop = () => {
+        return /Macintosh/.test(userAgent) && navigator.maxTouchPoints > 1;
+    };
+
+    return isIOSRequestingDesktop();
 }
 
 export function isSafariBrowser(): boolean {
@@ -185,7 +195,6 @@ export function renderError(error: string) {
         <div>${error}</div>
     </div>`;
 }
-
 export abstract class FloatingButton extends LitElement {
     @property()
     highlight = false;
@@ -331,7 +340,7 @@ export class LoadingSpinner extends LitElement {
     }
 
     render() {
-        return html`<div class="w-full py-4 flex items-center justify-center">
+        return html`<div class="w-full h-full flex items-center justify-center">
             <i class="icon !w-8 !h-8 fill-primary animate-spin">${spinnerIcon}</i>
         </div>`;
     }
@@ -585,6 +594,19 @@ export function toast(content: TemplateResult | HTMLElement | string, timeout = 
     document.body.append(dom(html`<toast-element .content=${content} .timeout=${timeout}></toast-element>`)[0]);
 }
 
+export function renderChrome(content: TemplateResult) {
+    return html`<div class="w-full max-w-[640px] mx-auto flex flex-col gap-4 px-4 pt-4 relative">
+        <h1 class="text-center text-primary"><a href="/" class="text-primary" style="text-decoration: none;">mtorrent</a></h1>
+        ${content}
+        <div class="absolute top-2 right-2 flex">
+            <theme-toggle class="w-10 h-10"></theme-toggle>
+            <button class="flex items-center justify-center w-10 h-10" @click=${() => router.push("/settings")}>
+                <i class="icon !w-6 !h-6">${settingsIcon}</i>
+            </button>
+        </div>
+    </div>`;
+}
+
 export function closeButton() {
     return html`<button @click=${() => router.pop()} class="flex items-center justify-center w-10 h-10">
         <i class="icon !w-6 !h-6 fill-muted-fg">${arrowLeftIcon}</i>
@@ -626,11 +648,7 @@ export class Topbar extends LitElement {
 
     render() {
         return html`
-            <div
-                class="fixed top-0 z-10 ${this.limitWidth
-                    ? "w-[640px]"
-                    : "w-full"} max-w-[100%] h-10 pr-4 flex items-center bg-background backdrop-blur-[8px]"
-            >
+            <div class="fixed top-0 z-10 ${this.limitWidth ? "w-[640px]" : "w-full"} max-w-[100%] h-10 pr-4 flex items-center backdrop-blur-[8px]">
                 <div class="flex-shrink-0">${this.closeButton}</div>
                 ${this.heading instanceof HTMLElement ? this.heading : html`<span class="font-semibold">${this.heading}</span>`} ${this.buttons}
             </div>
@@ -639,7 +657,7 @@ export class Topbar extends LitElement {
     }
 }
 
-export function renderPage(title: string, content: TemplateResult | HTMLElement, limitWidth = true) {
+export function renderPageShell(title: string, content: TemplateResult | HTMLElement, limitWidth = true) {
     return html`<div class="flex flex-col w-full ${limitWidth ? "max-w-[640px]" : ""} mx-auto min-h-full">
         ${renderTopbar(dom(html`<div class="font-semibold whitespace-nowrap overflow-x-auto">${title}</div>`)[0], closeButton(), undefined, true)}
         ${content}
