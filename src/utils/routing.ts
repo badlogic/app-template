@@ -24,6 +24,7 @@ export class Router {
     rootRoute = "/";
     notFoundRoot = "/404";
     currPage = 0;
+    modal?: HTMLElement;
 
     constructor() {
         window.addEventListener("popstate", (ev) => this.handleNavigation(ev));
@@ -67,6 +68,7 @@ export class Router {
     }
 
     push(path: string, page?: HTMLElement) {
+        history.pushState({ page: this.pageStack.length }, "", path);
         const route = this.matchRoute(path);
         if (!route) {
             this.navigateTo("/404");
@@ -74,7 +76,13 @@ export class Router {
             this.navigateTo(path, page);
         }
         this.currPage++;
-        history.pushState({ page: this.pageStack.length }, "", path);
+    }
+
+    pushModal(modal: HTMLElement) {
+        this.modal = modal;
+        this.currPage++;
+        document.body.append(modal);
+        history.pushState({ page: this.pageStack.length }, "", location.href);
     }
 
     pop() {
@@ -142,6 +150,12 @@ export class Router {
     disableNavigation = false;
     private handleNavigation(ev: PopStateEvent) {
         if (this.disableNavigation) return;
+        if (this.modal) {
+            this.modal.remove();
+            this.modal = undefined;
+            this.currPage = ev.state.page;
+            return;
+        }
         if (ev.state.page > this.currPage || !ev.state) {
             this.currPage = ev.state.page;
             // Forward
@@ -175,7 +189,7 @@ export class Router {
     }
 
     private matchRoute(path: string) {
-        path = new URL("https://foo.bar" + path).pathname;
+        path = path.startsWith("http") ? new URL(path).pathname : new URL("https://foo.bar" + path).pathname;
         for (const route of this.routes) {
             const match = route.regexp.exec(path);
             if (match) {
@@ -187,6 +201,21 @@ export class Router {
             }
         }
         return null;
+    }
+
+    getCurrentParams() {
+        const path = new URL(location.href).pathname;
+        for (const route of this.routes) {
+            const match = route.regexp.exec(path);
+            if (match) {
+                const params = new Map<string, string>();
+                route.keys.forEach((key: Key, index) => {
+                    params.set(key.name.toString(), match[index + 1]);
+                });
+                return params;
+            }
+        }
+        return undefined;
     }
 }
 
