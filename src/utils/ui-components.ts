@@ -1,10 +1,9 @@
-import { LitElement, PropertyValueMap, TemplateResult, html, render } from "lit";
+import { LitElement, PropertyValueMap, TemplateResult, html, nothing, render } from "lit";
 import { customElement, property, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
-import { errorIcon, arrowUpDoubleIcon, spinnerIcon, upDownIcon, moonIcon, sunIcon, settingsIcon, arrowLeftIcon } from "./icons.js";
+import { errorIcon, arrowUpDoubleIcon, spinnerIcon, upDownIcon, moonIcon, sunIcon, settingsIcon, arrowLeftIcon, arrowRightIcon } from "./icons.js";
 import { router } from "./routing.js";
 import { Theme, Store } from "./store.js";
-import { globalStyles } from "./styles.js";
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
     if (container) {
@@ -448,35 +447,59 @@ export class SelectBox<T> extends LitElement {
     dropdownOpen = false;
 
     @property()
+    align: "left" | "right" = "right";
+
+    @property()
     change: (value: T) => void = () => {};
+
+    popout?: HTMLElement;
+    popoutContainer?: HTMLElement;
 
     protected createRenderRoot(): Element | ShadowRoot {
         return this;
     }
 
-    connectedCallback(): void {
-        super.connectedCallback();
-        document.addEventListener("click", this.handleOutsideClick);
-    }
-
-    disconnectedCallback(): void {
-        document.removeEventListener("click", this.handleOutsideClick);
-        super.disconnectedCallback();
-    }
-
-    private handleOutsideClick = (event: MouseEvent): void => {
-        if (!this.contains(event.target as Node)) {
-            this.dropdownOpen = false;
-        }
-    };
-
     private toggleDropdown() {
         this.dropdownOpen = !this.dropdownOpen;
+        if (this.dropdownOpen) {
+            const button = this.querySelector("button");
+            this.popoutContainer = dom(
+                html`
+                    <div class="fixed top-0 left-0 w-full h-full">
+                        <div class="fixed flex flex-col rounded-md bg-muted focus:outline-none overflow-y-auto fancy-shadow mt-1">
+                            ${this.values.map(
+                                (item) =>
+                                    html`<button @click="${() => this.handleSelect(item)}" class="px-4 py-2 text-left text-sm hover:text-primary">
+                                        ${item.label}
+                                    </button>`
+                            )}
+                        </div>
+                    </div>
+                `
+            )[0];
+            this.popout = this.popoutContainer.children[0] as HTMLElement;
+            this.popoutContainer.addEventListener("click", () => {
+                this.popoutContainer?.remove();
+                this.dropdownOpen = false;
+            });
+            document.body.append(this.popoutContainer);
+            const updatePosition = () => {
+                if (!this.popout || !this.dropdownOpen) return;
+                const rect = button!.getBoundingClientRect();
+                this.popout!.style.top = rect.bottom + "px";
+                this.popout!.style.left = rect.left + rect.width - this.popout.getBoundingClientRect().width + "px";
+                requestAnimationFrame(updatePosition);
+            };
+            updatePosition();
+        } else {
+            this.popout?.remove();
+        }
     }
 
     private handleSelect(item: { label: string; value: T }) {
         this.selected = item.value;
         this.dropdownOpen = false;
+        this.popoutContainer?.remove();
         this.dispatchEvent(new CustomEvent("selection-changed", { detail: item.value }));
         this.change(this.selected);
     }
@@ -484,38 +507,17 @@ export class SelectBox<T> extends LitElement {
     render() {
         const buttonText = this.selected ? this.values.find((value) => value.value == this.selected)?.label : "Select an Option";
         return html`
-            <div class="relative inline-block text-left fancy-shadow">
-                <div>
-                    <button
-                        @click="${this.toggleDropdown}"
-                        type="button"
-                        class="inline-flex items-center justify-center w-full rounded-md gap-1 pl-2 pr-1 py-1 bg-muted text-sm focus:outline-none"
-                        aria-expanded="${this.dropdownOpen}"
-                        aria-haspopup="true"
-                    >
-                        ${buttonText}
-                        <i class="icon w-5 h-5">${upDownIcon}</i>
-                    </button>
-                </div>
-                ${this.dropdownOpen
-                    ? html`
-                          <div class="z-10 absolute left-0 rounded-md bg-muted focus:outline-none max-h-[40vh] overflow-auto fancy-shadow mt-2">
-                              <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="menu-button" tabindex="-1">
-                                  ${this.values.map(
-                                      (item) =>
-                                          html`<button
-                                              @click="${() => this.handleSelect(item)}"
-                                              class="w-full px-4 py-2 text-left text-sm hover:text-primary rounded-md"
-                                              role="menuitem"
-                                              tabindex="-1"
-                                          >
-                                              ${item.label}
-                                          </button>`
-                                  )}
-                              </div>
-                          </div>
-                      `
-                    : ""}
+            <div class="inline-block text-left fancy-shadow rounded-md">
+                <button
+                    @click="${this.toggleDropdown}"
+                    type="button"
+                    class="inline-flex items-center justify-center w-full rounded-md gap-1 pl-2 pr-1 py-1 bg-muted text-sm focus:outline-none"
+                    aria-expanded="${this.dropdownOpen}"
+                    aria-haspopup="true"
+                >
+                    ${buttonText}
+                    <i class="icon w-5 h-5">${upDownIcon}</i>
+                </button>
             </div>
         `;
     }
@@ -523,8 +525,6 @@ export class SelectBox<T> extends LitElement {
 
 @customElement("theme-toggle")
 export class ThemeToggle extends LitElement {
-    static styles = [globalStyles];
-
     @state()
     theme: Theme = "dark";
 
@@ -648,9 +648,16 @@ export class Topbar extends LitElement {
 
     render() {
         return html`
-            <div class="fixed top-0 z-10 ${this.limitWidth ? "w-[640px]" : "w-full"} max-w-[100%] h-10 pr-4 flex items-center backdrop-blur-[8px]">
+            <div
+                class="fixed top-0 z-10 w-screen ${this.limitWidth
+                    ? "max-w-[640px]"
+                    : ""} h-10 pr-4 flex items-center bg-[#fff]/60 dark:bg-[#111]/60 backdrop-blur-[8px]"
+            >
                 <div class="flex-shrink-0">${this.closeButton}</div>
-                ${this.heading instanceof HTMLElement ? this.heading : html`<span class="font-semibold">${this.heading}</span>`} ${this.buttons}
+                ${this.heading instanceof HTMLElement
+                    ? this.heading
+                    : html`<span class="font-semibold truncate overflow-hidden">${this.heading}</span>`}
+                ${this.buttons}
             </div>
             <div class="w-full h-10"></div>
         `;
@@ -658,8 +665,158 @@ export class Topbar extends LitElement {
 }
 
 export function renderPageShell(title: string, content: TemplateResult | HTMLElement, limitWidth = true) {
-    return html`<div class="flex flex-col w-full ${limitWidth ? "max-w-[640px]" : ""} mx-auto min-h-full">
+    return html`<div class="flex flex-col w-full ${limitWidth ? "max-w-[640px]" : ""} mx-auto min-h-full overflow-auto">
         ${renderTopbar(dom(html`<div class="font-semibold whitespace-nowrap overflow-x-auto">${title}</div>`)[0], closeButton(), undefined, true)}
         ${content}
     </div> `;
+}
+
+export function fixLinksAndVideos(container: HTMLElement) {
+    const links = container.querySelectorAll("a");
+    if (links) {
+        links.forEach((link) => {
+            if (link.host != location.host) {
+                link.setAttribute("target", "_blank");
+                link.setAttribute("rel", "noopener noreferrer");
+            } else {
+                link.addEventListener("click", (ev) => {
+                    ev.preventDefault();
+                    router.push(link.pathname);
+                });
+            }
+            link.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+            });
+        });
+    }
+
+    const videos = container.querySelectorAll("video");
+    if (videos) {
+        videos.forEach((video) => {
+            video.addEventListener("click", (ev) => {
+                ev.stopPropagation();
+                ev.stopImmediatePropagation();
+            });
+        });
+    }
+}
+
+function preventPinchZoom(event: TouchEvent): void {
+    if (event.touches.length > 1) {
+        event.preventDefault();
+    }
+}
+document.addEventListener("touchstart", preventPinchZoom, { passive: false });
+
+export function togglePinchZoom(enable: boolean): void {
+    if (enable) {
+        document.removeEventListener("touchstart", preventPinchZoom);
+    } else {
+        document.addEventListener("touchstart", preventPinchZoom, { passive: false });
+    }
+}
+
+@customElement("image-gallery")
+export class ImageGallery extends LitElement {
+    @property()
+    images: { url: string; altText?: string }[] = [];
+
+    @property()
+    imageIndex = 0;
+
+    @property()
+    isScrolling = false;
+
+    protected createRenderRoot(): Element | ShadowRoot {
+        return this;
+    }
+
+    connectedCallback(): void {
+        super.connectedCallback();
+        togglePinchZoom(true);
+    }
+
+    disconnectedCallback(): void {
+        super.disconnectedCallback();
+        togglePinchZoom(false);
+    }
+
+    protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+        super.firstUpdated(_changedProperties);
+        (this.renderRoot.children[0] as HTMLElement).addEventListener("scroll", () => {
+            this.isScrolling = true;
+            this.debounceScroll();
+        });
+        if (this.imageIndex > 0) {
+            const galleryContainer = this.renderRoot.children[0] as HTMLElement;
+            galleryContainer.scrollLeft = galleryContainer.clientWidth * this.imageIndex;
+        }
+    }
+
+    render() {
+        return html`
+            <div
+                class="fixed scrollbar-hide top-0 left-0 w-full h-full overflow-none flex snap-x overflow-x-auto backdrop-blur z-10 fill-primary"
+                @click=${() => this.close()}
+            >
+                ${this.images.map(
+                    (image, index) => html`
+                        <div class="flex-none w-full h-full relative snap-center flex justify-center items-center">
+                            ${this.images.length > 1 && index > 0 && !this.isScrolling
+                                ? html`<button @click=${(ev: MouseEvent) =>
+                                      this.scrollPrevious(
+                                          ev
+                                      )} class="animate-fade animate-duration-100 absolute left-4 top-4 h-full flex"><i class="icon !w-8 !h-8">${arrowLeftIcon}</button>`
+                                : nothing}
+                            ${this.images.length > 1 && index < this.images.length - 1 && !this.isScrolling
+                                ? html`<button @click=${(ev: MouseEvent) =>
+                                      this.scrollNext(
+                                          ev
+                                      )} class="animate-fade animate-duration-100 absolute right-4 top-4 h-full flex"><i class="icon !w-8 !h-8">${arrowRightIcon}</button>`
+                                : nothing}
+                            <img src="${image.url}" alt="${image.altText ?? ""}" class="max-w-full max-h-full object-contain" />
+                        </div>
+                    `
+                )}
+            </div>
+        `;
+    }
+
+    close() {
+        router.pop();
+    }
+
+    scrollNext(ev: MouseEvent) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
+        const galleryContainer = this.renderRoot.children[0] as HTMLElement;
+
+        if (galleryContainer) {
+            galleryContainer.scrollTo({ left: galleryContainer.scrollLeft + galleryContainer.clientWidth, behavior: "smooth" });
+            this.isScrolling = true;
+            this.debounceScroll();
+        }
+    }
+
+    scrollPrevious(ev: MouseEvent) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        ev.stopImmediatePropagation();
+        const galleryContainer = this.renderRoot.children[0] as HTMLElement;
+
+        if (galleryContainer) {
+            galleryContainer.scrollTo({ left: galleryContainer.scrollLeft - galleryContainer.clientWidth, behavior: "smooth" });
+            this.isScrolling = true;
+            this.debounceScroll();
+        }
+    }
+
+    scrollTimeout = 0;
+    debounceScroll() {
+        clearTimeout(this.scrollTimeout);
+        this.scrollTimeout = window.setTimeout(() => {
+            this.isScrolling = false;
+        }, 100);
+    }
 }
