@@ -4,7 +4,7 @@ import { Api } from "../api.js";
 import { renderError } from "../app.js";
 import { i18n } from "../utils/i18n.js";
 import { router } from "../utils/routing.js";
-import { pageContainerStyle } from "../utils/styles.js";
+import { pageContainerStyle, pageContentStyle } from "../utils/styles.js";
 
 @customElement("main-page")
 export class MainPage extends LitElement {
@@ -44,7 +44,7 @@ export class MainPage extends LitElement {
         if (this.error) return renderError(this.error);
         if (!this.message) return renderError(i18n("Couldn't load mesage"));
         return html`<div class="${pageContainerStyle}">
-            <div class="flex flex-col gap-4">
+            <div class="${pageContentStyle}">
                 <h1>${this.message}</h1>
                 <button class="btn self-start" @click=${() => router.push("/settings")}>Settings</button>
             </div>
