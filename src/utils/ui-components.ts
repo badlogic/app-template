@@ -20,7 +20,7 @@ export function dom(template: TemplateResult, container?: HTMLElement | Document
     return children as HTMLElement[];
 }
 
-export function onVisibleOnce(target: Element, callback: () => void) {
+export function onVisibleOnce(target: Element, callback: () => void, rootMargin = "200px", threshold = 0.01) {
     const observer = new IntersectionObserver(
         (entries) => {
             entries.forEach((entry) => {
@@ -32,14 +32,14 @@ export function onVisibleOnce(target: Element, callback: () => void) {
         },
         {
             root: null,
-            rootMargin: "200px",
-            threshold: 0.01,
+            rootMargin,
+            threshold,
         }
     );
     observer.observe(target);
 }
 
-export function onVisibilityChange(target: Element, onVisible: () => void, onInvisible: () => void): void {
+export function onVisibilityChange(target: Element, onVisible: () => void, onInvisible: () => void) {
     const observer = new IntersectionObserver(
         (entries) => {
             entries.forEach((entry) => {
@@ -57,6 +57,7 @@ export function onVisibilityChange(target: Element, onVisible: () => void, onInv
         }
     );
     observer.observe(target);
+    return observer;
 }
 
 export function hasLinkOrButtonParent(el: Element | HTMLElement | null) {
@@ -648,16 +649,14 @@ export class Topbar extends LitElement {
 
     render() {
         return html`
-            <div
-                class="fixed top-0 z-10 w-screen ${this.limitWidth
-                    ? "max-w-[640px]"
-                    : ""} h-10 pr-4 flex items-center bg-[#fff]/60 dark:bg-[#111]/60 backdrop-blur-[8px]"
-            >
-                <div class="flex-shrink-0">${this.closeButton}</div>
-                ${this.heading instanceof HTMLElement
-                    ? this.heading
-                    : html`<span class="font-semibold truncate overflow-hidden">${this.heading}</span>`}
-                ${this.buttons}
+            <div class="fixed top-0 left-0 z-10 w-screen h-10 flex items-center bg-[#fff]/60 dark:bg-[#111]/60 backdrop-blur-[8px]">
+                <div class="w-full ${this.limitWidth ? "max-w-[640px]" : ""} mx-auto h-10 pr-4 flex items-center">
+                    <div class="flex-shrink-0">${this.closeButton}</div>
+                    ${this.heading instanceof HTMLElement
+                        ? this.heading
+                        : html`<span class="font-semibold truncate overflow-hidden">${this.heading}</span>`}
+                    ${this.buttons}
+                </div>
             </div>
             <div class="w-full h-10"></div>
         `;
@@ -671,16 +670,23 @@ export function renderPageShell(title: string, content: TemplateResult | HTMLEle
     </div> `;
 }
 
-export function fixLinksAndVideos(container: HTMLElement) {
+export function fixLinksAndVideos(container: HTMLElement, collapsed = false) {
     const links = container.querySelectorAll("a");
     if (links) {
         links.forEach((link) => {
+            if (collapsed) {
+                link.addEventListener("click", (ev) => ev.preventDefault());
+                return;
+            }
+
             if (link.host != location.host) {
                 link.setAttribute("target", "_blank");
                 link.setAttribute("rel", "noopener noreferrer");
             } else {
                 link.addEventListener("click", (ev) => {
                     ev.preventDefault();
+                    ev.stopPropagation();
+                    ev.stopImmediatePropagation();
                     router.push(link.pathname);
                 });
             }
@@ -701,19 +707,9 @@ export function fixLinksAndVideos(container: HTMLElement) {
     }
 }
 
-function preventPinchZoom(event: TouchEvent): void {
-    if (event.touches.length > 1) {
-        event.preventDefault();
-    }
-}
-document.addEventListener("touchstart", preventPinchZoom, { passive: false });
-
-export function togglePinchZoom(enable: boolean): void {
-    if (enable) {
-        document.removeEventListener("touchstart", preventPinchZoom);
-    } else {
-        document.addEventListener("touchstart", preventPinchZoom, { passive: false });
-    }
+function resetZoom() {
+    let viewport = document.querySelector("meta[name=viewport]");
+    (viewport as any).content = "width=device-width, initial-scale=1.0";
 }
 
 @customElement("image-gallery")
@@ -733,12 +729,13 @@ export class ImageGallery extends LitElement {
 
     connectedCallback(): void {
         super.connectedCallback();
-        togglePinchZoom(true);
+        document.body.classList.add("overflow-hidden");
     }
 
     disconnectedCallback(): void {
         super.disconnectedCallback();
-        togglePinchZoom(false);
+        document.body.classList.remove("overflow-hidden");
+        resetZoom();
     }
 
     protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
@@ -756,12 +753,12 @@ export class ImageGallery extends LitElement {
     render() {
         return html`
             <div
-                class="fixed scrollbar-hide top-0 left-0 w-full h-full overflow-none flex snap-x overflow-x-auto backdrop-blur z-10 fill-primary"
+                class="fixed scrollbar-hide top-0 left-0 w-full h-full overflow-auto flex backdrop-blur z-10 fill-primary"
                 @click=${() => this.close()}
             >
                 ${this.images.map(
                     (image, index) => html`
-                        <div class="flex-none w-full h-full relative snap-center flex justify-center items-center">
+                        <div class="flex-none w-full h-full relative flex justify-center items-center">
                             ${this.images.length > 1 && index > 0 && !this.isScrolling
                                 ? html`<button @click=${(ev: MouseEvent) =>
                                       this.scrollPrevious(
@@ -774,7 +771,7 @@ export class ImageGallery extends LitElement {
                                           ev
                                       )} class="animate-fade animate-duration-100 absolute right-4 top-4 h-full flex"><i class="icon !w-8 !h-8">${arrowRightIcon}</button>`
                                 : nothing}
-                            <img src="${image.url}" alt="${image.altText ?? ""}" class="max-w-full max-h-full object-contain" />
+                            <img src="${image.url}" alt="${image.altText ?? ""}" class="w-full h-full object-contain" />
                         </div>
                     `
                 )}
@@ -793,7 +790,9 @@ export class ImageGallery extends LitElement {
         const galleryContainer = this.renderRoot.children[0] as HTMLElement;
 
         if (galleryContainer) {
-            galleryContainer.scrollTo({ left: galleryContainer.scrollLeft + galleryContainer.clientWidth, behavior: "smooth" });
+            const scrollDistance =
+                galleryContainer.scrollLeft - (galleryContainer.scrollLeft % galleryContainer.clientWidth) + galleryContainer.clientWidth;
+            galleryContainer.scrollTo({ left: scrollDistance, behavior: "smooth" });
             this.isScrolling = true;
             this.debounceScroll();
         }
@@ -806,7 +805,9 @@ export class ImageGallery extends LitElement {
         const galleryContainer = this.renderRoot.children[0] as HTMLElement;
 
         if (galleryContainer) {
-            galleryContainer.scrollTo({ left: galleryContainer.scrollLeft - galleryContainer.clientWidth, behavior: "smooth" });
+            const scrollDistance =
+                galleryContainer.scrollLeft - (galleryContainer.scrollLeft % galleryContainer.clientWidth) - galleryContainer.clientWidth;
+            galleryContainer.scrollTo({ left: scrollDistance, behavior: "smooth" });
             this.isScrolling = true;
             this.debounceScroll();
         }

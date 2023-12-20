@@ -33,6 +33,8 @@ import heartFilledIconSvg from "remixicon/icons/Health & Medical/heart-fill.svg"
 // @ts-ignore
 import editIconSvg from "remixicon/icons/Design/edit-line.svg";
 // @ts-ignore
+import pencilIconSvg from "remixicon/icons/Design/pencil-line.svg";
+// @ts-ignore
 import deleteIconSvg from "remixicon/icons/System/delete-bin-line.svg";
 // @ts-ignore
 import shieldIconSvg from "remixicon/icons/System/shield-keyhole-line.svg";
@@ -110,6 +112,13 @@ import folderIconSvg from "remixicon/icons/Document/folder-line.svg";
 import playCircleIconSvg from "remixicon/icons/Media/play-circle-line.svg";
 // @ts-ignore
 import playIconSvg from "remixicon/icons/Media/play-line.svg";
+// @ts-ignore
+import eyeOpenIconSvg from "remixicon/icons/System/eye-line.svg";
+// @ts-ignore
+import eyeClosedIconSvg from "remixicon/icons/System/eye-off-line.svg";
+
+// @ts-ignore
+import favIconSvg from "../../html/favicon.svg";
 
 import { unsafeHTML } from "lit-html/directives/unsafe-html.js";
 
@@ -169,3 +178,7 @@ export const hdIcon = unsafeHTML(hdIconSvg);
 export const folderIcon = unsafeHTML(folderIconSvg);
 export const playCircleIcon = unsafeHTML(playCircleIconSvg);
 export const playIcon = unsafeHTML(playIconSvg);
+export const pencilIcon = unsafeHTML(pencilIconSvg);
+export const eyeOpenIcon = unsafeHTML(eyeOpenIconSvg);
+export const eyeClosedIcon = unsafeHTML(eyeClosedIconSvg);
+export const favIcon = unsafeHTML(favIconSvg);
