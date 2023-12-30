@@ -1,5 +1,8 @@
-import { JsonValue } from "./server/key-value-store.js";
 import { error } from "./utils/utils.js";
+
+export interface JsonValue {
+    [key: string]: any;
+}
 
 function apiBaseUrl() {
     if (typeof location === "undefined") return "http://localhost:3333/api/";
@@ -11,6 +14,26 @@ export async function apiGet<T>(endpoint: string) {
         const result = await fetch(apiBaseUrl() + endpoint);
         if (!result.ok) throw new Error();
         return (await result.json()) as T;
+    } catch (e) {
+        return error(`Request /api/${endpoint} failed`, e);
+    }
+}
+
+export async function apiGetBlob(endpoint: string): Promise<Blob | Error> {
+    try {
+        const result = await fetch(apiBaseUrl() + endpoint);
+        if (!result.ok) throw new Error();
+        return await result.blob();
+    } catch (e) {
+        return error(`Request /api/${endpoint} failed`, e);
+    }
+}
+
+export async function apiGetText(endpoint: string): Promise<string | Error> {
+    try {
+        const result = await fetch(apiBaseUrl() + endpoint);
+        if (!result.ok) throw new Error();
+        return await result.text();
     } catch (e) {
         return error(`Request /api/${endpoint} failed`, e);
     }

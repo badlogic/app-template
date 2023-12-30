@@ -22,7 +22,7 @@
 
 /* Dark theme variables */
 .dark {
-    --background: #000c15;
+    --background: #111111;
     --accent: #3b82f6;
     --accent-dark: #1e40af;
     --primary: #cc7d24;
@@ -61,7 +61,7 @@
     }
 
     a {
-        @apply text-blue-500 break-words hover:underline;
+        @apply break-words hover:underline;
     }
 
     iframe {
@@ -70,8 +70,12 @@
 }
 
 @layer components {
+    * {
+        @apply outline-none;
+    }
+
     .btn {
-        @apply h-8 rounded-md px-4 whitespace-nowrap text-sm;
+        @apply h-8 rounded-full px-4 whitespace-nowrap text-sm;
         @apply bg-primary text-primary-fg;
         @apply disabled:bg-muted disabled:text-muted-fg;
         @apply hover:bg-primarysw-600 disabled:hover:bg-muted;
@@ -102,8 +106,34 @@
         @apply outline-none bg-transparent;
     }
 
-    .textinput {
-        @apply outline-none bg-transparent border border-divider rounded px-2 py-1;
+    .button {
+        @apply border border-primary text-primary rounded-full px-4 py-2 mt-4 outline-none;
+        @apply hover:text-primarysw-600 hover:border-primarysw-600;
+        @apply focus:text-primarysw-500 focus:border-primarysw-500;
+        @apply active:text-primarysw-700 active:border-primarysw-700;
+    }
+
+    .button-muted {
+        @apply border border-muted text-muted-fg rounded-full px-4 py-2 outline-none;
+        @apply focus:text-muted-fg focus:border-muted;
+        @apply hover:text-primarysw-600 hover:border-primarysw-600;
+        @apply active:text-primarysw-700 active:border-primarysw-700;
+    }
+
+    .textfield {
+        @apply px-2 py-1 bg-transparent dark:text-white border border-divider rounded-md focus:border-primary focus:outline-none;
+    }
+
+    .pswp__button--zoom,
+    .pswp__button--close {
+        display: none !important;
+    }
+
+    .pswp__top-bar {
+        top: auto !important;
+        bottom: 0 !important;
+        justify-content: flex-start !important;
+        height: auto !important;
     }
 }
 

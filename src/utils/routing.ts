@@ -10,22 +10,26 @@ export class Route<T extends HTMLElement> {
     constructor(
         readonly path: string,
         readonly renderPage: () => TemplateResult | T,
+        readonly title: () => string,
         readonly requiresAuth = false,
-        readonly reusePage: (page: T) => boolean = () => true
+        readonly removePage = true
     ) {
         this.regexp = pathToRegexp(this.path, this.keys);
     }
 }
 
+export type RouterPage = { route: Route<any>; path: string; page: HTMLElement; srcollTop: number; display: string };
+
 export class Router {
-    pageStack: { route: Route<any>; page: HTMLElement; srcollTop: number; display: string }[] = [];
+    pageStack: RouterPage[] = [];
     routes: Route<any>[] = [];
     authProvider = () => true;
     rootRoute = "/";
     notFoundRoot = "/404";
     currPage = 0;
-    modal?: HTMLElement;
+    modals: HTMLElement[] = [];
     outlet = document.body;
+    listeners: ((pathname: string) => void)[] = [];
 
     constructor() {
         window.addEventListener("popstate", (ev) => this.handleNavigation(ev));
@@ -49,10 +53,11 @@ export class Router {
     addRoute<T extends HTMLElement>(
         path: string,
         renderPage: () => TemplateResult | T,
-        requiresAuth = false,
-        reusePage: (page: T) => boolean = () => true
+        title: () => string,
+        requiresAuth: boolean = false,
+        removePage = true
     ) {
-        const route = new Route(path, renderPage, requiresAuth, reusePage);
+        const route = new Route(path, renderPage, title, requiresAuth, removePage);
         if (this.routes.some((other) => other.path == route.path)) throw new Error(`Route ${route.path}} already defined`);
         this.routes.push(route);
     }
@@ -60,30 +65,37 @@ export class Router {
     replace(path: string) {
         const page = this.pageStack.pop();
         page?.page.remove();
-        this.navigateTo(path);
-        history.replaceState({ page: history.state?.page ?? this.pageStack.length }, "", path);
+        if (this.navigateTo(path)) {
+            history.replaceState({ page: history.state?.page ?? this.pageStack.length }, "", path);
+            this.notifyListeners(path);
+        } else {
+            history.replaceState({ page: history.state?.page ?? this.pageStack.length }, "", this.rootRoute);
+            this.notifyListeners(this.rootRoute);
+        }
     }
 
     replaceUrl(path: string) {
         history.replaceState({ page: history.state?.page ?? this.pageStack.length }, "", path);
     }
 
-    push(path: string, page?: HTMLElement) {
-        history.pushState({ page: this.pageStack.length }, "", path);
+    push(path: string) {
+        if (location.pathname == path) return;
+        history.pushState({ page: this.pageStack.length + 1 }, "", path);
         const route = this.matchRoute(path);
         if (!route) {
             this.navigateTo("/404");
         } else {
-            this.navigateTo(path, page);
+            this.navigateTo(path);
         }
         this.currPage++;
+        this.notifyListeners(path);
     }
 
     pushModal(modal: HTMLElement) {
-        this.modal = modal;
+        this.modals.push(modal);
         this.currPage++;
         this.outlet.append(modal);
-        history.pushState({ page: this.pageStack.length }, "", location.href);
+        history.pushState({ page: this.pageStack.length + 1 }, "", location.href);
     }
 
     pop() {
@@ -113,7 +125,13 @@ export class Router {
             }
         };
         window.addEventListener("popstate", popState);
-        history.back();
+        if (history.state?.page == 1) {
+            this.replace(path);
+            this.currPage = 1;
+            this.disableNavigation = false;
+        } else {
+            history.back();
+        }
     }
 
     top() {
@@ -124,40 +142,67 @@ export class Router {
         this.outlet = outlet;
     }
 
-    private navigateTo(path: string, prerenderedPage?: HTMLElement) {
+    private notifyListeners(pathname: string) {
+        for (const listener of this.listeners) {
+            listener(pathname);
+        }
+    }
+
+    private savePage(page: RouterPage) {
+        if (page.page.style.display == "none") return;
+        page.srcollTop = getScrollParent(this.outlet)!.scrollTop;
+        page.display = page.page.style.display;
+        const streamViews = Array.from(page.page.querySelectorAll("*")).filter((el) => el instanceof StreamView) as StreamView<any>[];
+        for (const streamView of streamViews) streamView.disableIntersector = true;
+        // page.page.style.display = "none";
+        page.page.remove();
+    }
+
+    private restorePage(page: RouterPage) {
+        this.pageStack = this.pageStack.filter((other) => other != page);
+        this.pageStack.push(page);
+        this.outlet.append(page.page);
+        const streamViews = Array.from(page.page.querySelectorAll("*")).filter((el) => el instanceof StreamView) as StreamView<any>[];
+        for (const streamView of streamViews) streamView.disableIntersector = false;
+        // page.page.style.display = page.display;
+        queueMicrotask(() => (getScrollParent(this.outlet)!.scrollTop = page.srcollTop));
+    }
+
+    private navigateTo(path: string) {
         const route = this.matchRoute(path);
+
         if (!route) {
             this.navigateTo("/404");
-            return;
+            return false;
         }
+
         if (route.route.requiresAuth && !this.authProvider()) {
             this.navigateTo(this.rootRoute);
-            return;
+            return false;
         }
-        const lastPage = this.top();
-        if (lastPage && lastPage.route == route.route && route.route.reusePage(lastPage.page)) {
-            console.log("Re-using existing page");
+
+        document.title = route?.route.title();
+
+        if (this.top()) this.savePage(this.top()!);
+        const matchingPage = this.pageStack.find((page) => page.path == path);
+        if (matchingPage) {
+            this.restorePage(matchingPage);
         } else {
-            const page = prerenderedPage ?? route.route.renderPage();
-            if (lastPage) {
-                lastPage.srcollTop = getScrollParent(this.outlet)!.scrollTop;
-                lastPage.display = lastPage.page.style.display;
-                const streamViews = Array.from(lastPage.page.querySelectorAll("*")).filter((el) => el instanceof StreamView) as StreamView<any>[];
-                for (const streamView of streamViews) streamView.disableIntersector = true;
-                lastPage.page.style.display = "none";
-            }
+            const page = route.route.renderPage();
             const pageDom = page instanceof HTMLElement ? page : dom(page)[0];
-            this.pageStack.push({ route: route.route, page: pageDom, srcollTop: 0, display: pageDom.style.display });
+            getScrollParent(this.outlet)!.scrollTop = 0;
+            this.pageStack.push({ route: route.route, path, page: pageDom, srcollTop: 0, display: pageDom.style.display });
             this.outlet.append(pageDom);
         }
+        return true;
     }
 
     disableNavigation = false;
     private handleNavigation(ev: PopStateEvent) {
         if (this.disableNavigation) return;
-        if (this.modal) {
-            this.modal.remove();
-            this.modal = undefined;
+        if (this.modals.length > 0) {
+            const modal = this.modals.pop()!;
+            modal.remove();
             this.currPage = ev.state.page;
             return;
         }
@@ -167,28 +212,30 @@ export class Router {
             const route = this.matchRoute(location.pathname);
             if (!route) {
                 this.navigateTo("/404");
+                this.notifyListeners("/404");
                 return;
             }
             if ((route.route.requiresAuth && !this.authProvider()) || (!this.authProvider() && ev.state.page > 1)) {
                 this.popAll(this.rootRoute);
             } else {
                 this.navigateTo(location.pathname + location.search + location.hash);
+                this.notifyListeners(location.pathname);
             }
         } else {
             this.currPage = ev.state.page;
             // Backward
             const page = this.pageStack.pop();
-            page?.page.remove();
-            queueMicrotask(() => {
-                const page = this.top();
-                if (page) {
-                    const streamViews = Array.from(page.page.querySelectorAll("*")).filter((el) => el instanceof StreamView) as StreamView<any>[];
-                    for (const streamView of streamViews) streamView.disableIntersector = false;
-                    page.page.style.display = page.display;
-                    queueMicrotask(() => (getScrollParent(this.outlet)!.scrollTop = page.srcollTop));
+            if (page) {
+                if (page.route.removePage) {
+                    page.page.remove();
                 } else {
-                    this.navigateTo(location.pathname);
+                    page.page.remove();
+                    this.pageStack.push(page);
                 }
+            }
+            queueMicrotask(() => {
+                this.navigateTo(location.pathname);
+                this.notifyListeners(location.pathname);
             });
         }
     }

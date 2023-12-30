@@ -33,20 +33,20 @@ mkdir -p data/postgres
 
 case "$1" in
 start)
-	docker-compose -p $project -f docker-compose.base.yml -f docker-compose.prod.yml build
-	docker-compose -p $project -f docker-compose.base.yml -f docker-compose.prod.yml up -d
+	docker compose -p $project -f docker-compose.base.yml -f docker-compose.prod.yml build
+	docker compose -p $project -f docker-compose.base.yml -f docker-compose.prod.yml up -d
 	;;
 startdev)
-	docker-compose -p $project -f docker-compose.base.yml down -t 1
-	docker-compose -p $project -f docker-compose.base.yml -f docker-compose.dev.yml build
-	docker-compose -p $project -f docker-compose.base.yml -f docker-compose.dev.yml up
+	docker compose -p $project -f docker-compose.base.yml down -t 1
+	docker compose -p $project -f docker-compose.base.yml -f docker-compose.dev.yml build
+	docker compose -p $project -f docker-compose.base.yml -f docker-compose.dev.yml up
 	;;
 reloadnginx)
 	docker exec -it ${project}_nginx nginx -t
 	docker exec -it ${project}_nginx nginx -s reload
 	;;
 stop)
-	docker-compose -p $project -f docker-compose.base.yml down -t 1
+	docker compose -p $project -f docker-compose.base.yml down -t 1
 	;;
 shell)
 	docker exec -it ${project}_server bash
@@ -55,7 +55,7 @@ shellnginx)
 	docker exec -it ${project}_nginx bash
 	;;
 logs)
-	docker-compose -p $project -f docker-compose.base.yml logs -f
+	docker compose -p $project -f docker-compose.base.yml logs -f
 	;;
 dbbackup)
 	docker exec -it ${project}_postgres bash -c 'pg_dump -U ${project} ${project}_db > /backup/backup.sql'

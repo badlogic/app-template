@@ -3,7 +3,6 @@ import { customElement, property, state } from "lit/decorators.js";
 import { map } from "lit/directives/map.js";
 import { errorIcon, arrowUpDoubleIcon, spinnerIcon, upDownIcon, moonIcon, sunIcon, settingsIcon, arrowLeftIcon, arrowRightIcon } from "./icons.js";
 import { router } from "./routing.js";
-import { Theme, Store } from "./store.js";
 
 export function dom(template: TemplateResult, container?: HTMLElement | DocumentFragment): HTMLElement[] {
     if (container) {
@@ -140,7 +139,7 @@ export function copyTextToClipboard(text: string): void {
     try {
         const successful = document.execCommand("copy");
         if (!successful) {
-            console.error("Failed to copy link.");
+            console.error("Failed to copy link");
         }
     } catch (err) {
         console.error("Error in copying link: ", err);
@@ -155,7 +154,7 @@ export function getScrollParent(parent: HTMLElement | Node | null) {
         if (parent == document.documentElement) return parent as HTMLElement;
         parent = parent.parentNode;
     }
-    return null;
+    return undefined;
 }
 
 function resetAnimation(el: HTMLElement) {
@@ -189,27 +188,59 @@ export function isSafariBrowser(): boolean {
     return !userAgent.includes("chrome") && !userAgent.includes("android") && (userAgent.includes("webkit") || userAgent.includes("safari"));
 }
 
+export function renderInfo(content: TemplateResult | HTMLElement | string, icon?: TemplateResult, click?: (ev: MouseEvent) => void) {
+    return html`<div
+        @click=${(ev: MouseEvent) => (click ? click(ev) : undefined)}
+        class="bg-muted text-muted-fg fill-muted-fg, px-4 py-2 rounded flex items-center"
+    >
+        ${icon ? html`<i class="icon w-6 h-6 fill-muted-fg mr-2">${icon}</i>` : nothing}${content}
+    </div>`;
+}
+
 export function renderError(error: string) {
     return html`<div class="bg-red-500 w-full flex items-center px-4 py-2 text-[#fff] gap-2 rounded-md">
         <i class="icon !w-6 !h-6 fill-[#fff]">${errorIcon}</i>
         <div>${error}</div>
     </div>`;
 }
+
+export class BaseElement extends LitElement {
+    protected createRenderRoot(): Element | ShadowRoot {
+        return this;
+    }
+
+    protected updated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
+        super.updated(_changedProperties);
+        fixLinksAndVideos(this);
+    }
+}
+
+export class SubscribedElement extends BaseElement {
+    readonly subscriptions: (() => void)[] = [];
+
+    disconnectedCallback(): void {
+        super.disconnectedCallback();
+        for (const subscription of this.subscriptions) {
+            subscription();
+        }
+    }
+}
+
 export abstract class FloatingButton extends LitElement {
     @property()
     highlight = false;
 
     @property()
-    highlightAnimation = "animate-pulse";
+    highlightAnimation = "";
 
     @property()
     highlightStyle = "w-12 h-12 flex justify-center items-center bg-primary rounded-full fancy-shadow";
 
     @property()
-    highlightIconStyle = "fill-[#fff]";
+    highlightIconStyle = "text-[#fff]";
 
     @property()
-    hide = false;
+    lower = false;
 
     @property()
     value?: string;
@@ -231,12 +262,9 @@ export abstract class FloatingButton extends LitElement {
     render() {
         const normalStyle =
             "w-12 h-12 flex justify-center items-center bg-background dark:bg-divider border border-divider rounded-full fancy-shadow";
+        const animationStyle = `transition-transform  ${this.lower ? "translate-y-full md:translate-y-0" : "translate-y-0"}`;
 
-        return html`<div
-            class="fixed z-10 ${this.getOffset()} ${this.hide && !this.highlight
-                ? "animate-fade animate-reverse disable-pointer-events"
-                : "animate-fade enable-pointer-events"} animate-duration-300"
-        >
+        return html`<div class="${animationStyle} fixed z-20 ${this.getOffset()} animate-duration-300 md:right-[calc(50vw+336px)]">
             <button
                 class="${this.highlight ? this.highlightStyle + " animate-infinite animate-ease-in-out " : normalStyle}"
                 @click=${() => this.handleClick()}
@@ -270,11 +298,11 @@ export class UpButton extends FloatingButton {
         scrollParent?.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    scrollParent: HTMLElement | null = null;
+    scrollParent?: HTMLElement;
 
     constructor() {
         super();
-        this.hide = true;
+        this.classList.add("hidden");
     }
 
     connectedCallback(): void {
@@ -310,26 +338,45 @@ export class UpButton extends FloatingButton {
     scrollHandler = () => this.handleScroll();
     handleScroll() {
         if (this.highlight) {
-            if (getScrollParent(this.parentElement)!.scrollTop < 80) {
-                this.hide = true;
+            if (getScrollParent(this.parentElement)!.scrollTop < 10) {
                 this.highlight = false;
+                this.classList.add("hidden");
             }
+            const dir = this.lastScrollTop - getScrollParent(this.parentElement)!.scrollTop;
+            if (dir != 0) {
+                this.lower = dir < 0;
+            }
+            this.classList.remove("hidden");
             this.lastScrollTop = getScrollParent(this.parentElement)!!.scrollTop;
             return;
         }
 
         if (getScrollParent(this.parentElement)!.scrollTop < 10) {
-            this.hide = true;
             this.highlight = false;
             this.lastScrollTop = getScrollParent(this.parentElement)!.scrollTop;
+            this.classList.add("hidden");
             return;
         }
+        this.classList.remove("hidden");
 
         const dir = this.lastScrollTop - getScrollParent(this.parentElement)!.scrollTop;
         if (dir != 0) {
-            this.hide = dir < 0;
+            if (dir < 0) {
+                this.classList.add("hidden");
+            } else {
+                this.classList.remove("hidden");
+            }
+            this.lower = dir < 0;
         }
         this.lastScrollTop = getScrollParent(this.parentElement)!.scrollTop;
+    }
+
+    setHighlight() {
+        const scrollParent = getScrollParent(this)!;
+        if (scrollParent.scrollTop > 80) {
+            this.classList.remove("hidden");
+            this.highlight = true;
+        }
     }
 }
 
@@ -341,7 +388,7 @@ export class LoadingSpinner extends LitElement {
 
     render() {
         return html`<div class="w-full h-full flex items-center justify-center">
-            <i class="icon !w-8 !h-8 fill-primary animate-spin">${spinnerIcon}</i>
+            <i class="icon !w-8 !h-8 text-primary animate-spin">${spinnerIcon}</i>
         </div>`;
     }
 }
@@ -403,11 +450,11 @@ export class ButtonGroup<T> extends LitElement {
     }
 
     render() {
-        return html`<div class="flex h-8 fancy-shadow rounded-lg cursor-pointer">
+        return html`<div class="flex h-8 fancy-shadow rounded-full cursor-pointer">
             ${map(this.values, (value, index) => {
                 let rounded = "";
-                if (index == 0) rounded = "rounded-l-lg";
-                if (index == this.values.length - 1) rounded = "rounded-r-lg";
+                if (index == 0) rounded = "rounded-l-full";
+                if (index == this.values.length - 1) rounded = "rounded-r-full";
                 let selected =
                     this.values[index].value == this.selected
                         ? "bg-primary text-primary-fg hover:bg-primarysw-600"
@@ -524,39 +571,6 @@ export class SelectBox<T> extends LitElement {
     }
 }
 
-@customElement("theme-toggle")
-export class ThemeToggle extends LitElement {
-    @state()
-    theme: Theme = "dark";
-
-    protected createRenderRoot(): Element | ShadowRoot {
-        return this;
-    }
-
-    connectedCallback(): void {
-        super.connectedCallback();
-        this.theme = Store.getTheme() ?? "dark";
-        this.setTheme(this.theme);
-    }
-
-    setTheme(theme: Theme) {
-        Store.setTheme(theme);
-        if (theme == "dark") document.documentElement.classList.add("dark");
-        else document.documentElement.classList.remove("dark");
-    }
-
-    toggleTheme() {
-        this.theme = this.theme == "dark" ? "light" : "dark";
-        this.setTheme(this.theme);
-    }
-
-    render() {
-        return html`<button class="flex items-center justify-center w-full h-full" @click=${this.toggleTheme}>
-            <i class="icon !w-5 !h-5">${this.theme == "dark" ? moonIcon : sunIcon}</i>
-        </button>`;
-    }
-}
-
 @customElement("toast-element")
 export class Toast extends LitElement {
     @property()
@@ -630,7 +644,7 @@ export function renderTopbar(
 }
 
 @customElement("top-bar")
-export class Topbar extends LitElement {
+export class Topbar extends BaseElement {
     @property()
     heading?: TemplateResult;
 
@@ -649,16 +663,16 @@ export class Topbar extends LitElement {
 
     render() {
         return html`
-            <div class="fixed top-0 left-0 z-10 w-screen h-10 flex items-center bg-[#fff]/60 dark:bg-[#111]/60 backdrop-blur-[8px]">
-                <div class="w-full ${this.limitWidth ? "max-w-[640px]" : ""} mx-auto h-10 pr-4 flex items-center">
-                    <div class="flex-shrink-0">${this.closeButton}</div>
+            <div class="fixed top-0 left-0 z-10 w-screen h-12 flex items-center bg-[#fff]/60 dark:bg-[#111]/60 backdrop-blur-[8px]">
+                <div class="w-full ${this.limitWidth ? "max-w-[640px]" : ""} mx-auto h-12 pr-4 flex items-center">
+                    ${this.closeButton ? html`<div class="flex-shrink-0">${this.closeButton}</div>` : html`<div class="w-4"></div>`}
                     ${this.heading instanceof HTMLElement
                         ? this.heading
                         : html`<span class="font-semibold truncate overflow-hidden">${this.heading}</span>`}
                     ${this.buttons}
                 </div>
             </div>
-            <div class="w-full h-10"></div>
+            <div class="w-full h-12"></div>
         `;
     }
 }
@@ -687,6 +701,9 @@ export function fixLinksAndVideos(container: HTMLElement, collapsed = false) {
                     ev.preventDefault();
                     ev.stopPropagation();
                     ev.stopImmediatePropagation();
+                    if (link.pathname == location.pathname) return;
+                    const navs = new Set<string>(["/home", "/settings", "/hashtags", "/lists", "/feeds", "/search", "/notifications"]);
+
                     router.push(link.pathname);
                 });
             }
@@ -704,120 +721,5 @@ export function fixLinksAndVideos(container: HTMLElement, collapsed = false) {
                 ev.stopImmediatePropagation();
             });
         });
-    }
-}
-
-function resetZoom() {
-    let viewport = document.querySelector("meta[name=viewport]");
-    (viewport as any).content = "width=device-width, initial-scale=1.0";
-}
-
-@customElement("image-gallery")
-export class ImageGallery extends LitElement {
-    @property()
-    images: { url: string; altText?: string }[] = [];
-
-    @property()
-    imageIndex = 0;
-
-    @property()
-    isScrolling = false;
-
-    protected createRenderRoot(): Element | ShadowRoot {
-        return this;
-    }
-
-    connectedCallback(): void {
-        super.connectedCallback();
-        document.body.classList.add("overflow-hidden");
-    }
-
-    disconnectedCallback(): void {
-        super.disconnectedCallback();
-        document.body.classList.remove("overflow-hidden");
-        resetZoom();
-    }
-
-    protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
-        super.firstUpdated(_changedProperties);
-        (this.renderRoot.children[0] as HTMLElement).addEventListener("scroll", () => {
-            this.isScrolling = true;
-            this.debounceScroll();
-        });
-        if (this.imageIndex > 0) {
-            const galleryContainer = this.renderRoot.children[0] as HTMLElement;
-            galleryContainer.scrollLeft = galleryContainer.clientWidth * this.imageIndex;
-        }
-    }
-
-    render() {
-        return html`
-            <div
-                class="fixed scrollbar-hide top-0 left-0 w-full h-full overflow-auto flex backdrop-blur z-10 fill-primary"
-                @click=${() => this.close()}
-            >
-                ${this.images.map(
-                    (image, index) => html`
-                        <div class="flex-none w-full h-full relative flex justify-center items-center">
-                            ${this.images.length > 1 && index > 0 && !this.isScrolling
-                                ? html`<button @click=${(ev: MouseEvent) =>
-                                      this.scrollPrevious(
-                                          ev
-                                      )} class="animate-fade animate-duration-100 absolute left-4 top-4 h-full flex"><i class="icon !w-8 !h-8">${arrowLeftIcon}</button>`
-                                : nothing}
-                            ${this.images.length > 1 && index < this.images.length - 1 && !this.isScrolling
-                                ? html`<button @click=${(ev: MouseEvent) =>
-                                      this.scrollNext(
-                                          ev
-                                      )} class="animate-fade animate-duration-100 absolute right-4 top-4 h-full flex"><i class="icon !w-8 !h-8">${arrowRightIcon}</button>`
-                                : nothing}
-                            <img src="${image.url}" alt="${image.altText ?? ""}" class="w-full h-full object-contain" />
-                        </div>
-                    `
-                )}
-            </div>
-        `;
-    }
-
-    close() {
-        router.pop();
-    }
-
-    scrollNext(ev: MouseEvent) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        ev.stopImmediatePropagation();
-        const galleryContainer = this.renderRoot.children[0] as HTMLElement;
-
-        if (galleryContainer) {
-            const scrollDistance =
-                galleryContainer.scrollLeft - (galleryContainer.scrollLeft % galleryContainer.clientWidth) + galleryContainer.clientWidth;
-            galleryContainer.scrollTo({ left: scrollDistance, behavior: "smooth" });
-            this.isScrolling = true;
-            this.debounceScroll();
-        }
-    }
-
-    scrollPrevious(ev: MouseEvent) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        ev.stopImmediatePropagation();
-        const galleryContainer = this.renderRoot.children[0] as HTMLElement;
-
-        if (galleryContainer) {
-            const scrollDistance =
-                galleryContainer.scrollLeft - (galleryContainer.scrollLeft % galleryContainer.clientWidth) - galleryContainer.clientWidth;
-            galleryContainer.scrollTo({ left: scrollDistance, behavior: "smooth" });
-            this.isScrolling = true;
-            this.debounceScroll();
-        }
-    }
-
-    scrollTimeout = 0;
-    debounceScroll() {
-        clearTimeout(this.scrollTimeout);
-        this.scrollTimeout = window.setTimeout(() => {
-            this.isScrolling = false;
-        }, 100);
     }
 }
