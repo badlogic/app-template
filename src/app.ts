@@ -21,9 +21,21 @@ export class App extends LitElement {
 
     protected firstUpdated(_changedProperties: PropertyValueMap<any> | Map<PropertyKey, unknown>): void {
         super.firstUpdated(_changedProperties);
-        router.addRoute("/", () => html`<main-page></main-page>`);
-        router.addRoute("/404", () => renderError(i18n("Whoops, that page doesn't exist")));
-        router.addRoute("/settings", () => html`<settings-page></settings-page>`);
+        router.addRoute(
+            "/",
+            () => html`<main-page></main-page>`,
+            () => "app"
+        );
+        router.addRoute(
+            "/404",
+            () => renderError(i18n("Whoops, that page doesn't exist")),
+            () => "404"
+        );
+        router.addRoute(
+            "/settings",
+            () => html`<settings-page></settings-page>`,
+            () => "Settings"
+        );
 
         router.setRootRoute("/");
         router.setNotFoundRoot("/404");

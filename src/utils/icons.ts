@@ -182,7 +182,3 @@ export const pencilIcon = unsafeHTML(pencilIconSvg);
 export const eyeOpenIcon = unsafeHTML(eyeOpenIconSvg);
 export const eyeClosedIcon = unsafeHTML(eyeClosedIconSvg);
 export const favIcon = unsafeHTML(favIconSvg);
-
-// @ts-ignore
-import logoSvg from "../../html/logo.svg";
-export const logo = unsafeHTML(logoSvg);
