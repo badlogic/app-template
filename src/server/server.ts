@@ -71,7 +71,7 @@ __feature_db_end__
     setupLiveReload(server);
 })();
 
-__feature_db_start_
+__feature_db_start__
 async function connectWithRetry(maxRetries = 5, interval = 2000) {
     let retries = 0;
     while (retries < maxRetries) {

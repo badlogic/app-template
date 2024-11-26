@@ -8,8 +8,8 @@ const error = (msg) => {
 
 const processFeatureSections = (content, features) => {
     for (const [featureName, enabled] of Object.entries(features)) {
-        const startMarker = `__feature_${featureName}__start__`;
-        const endMarker = `__feature_${featureName}__end__`;
+        const startMarker = `__feature_${featureName}_start__`;
+        const endMarker = `__feature_${featureName}_end__`;
 
         const lines = content.split('\n');
         const processedLines = [];
@@ -120,6 +120,7 @@ const filesToProcess = [
     "docker/control.sh",
     "html/index.html",
     "html/manifest.json",
+    "src/server/server.ts"
 ];
 
 filesToProcess.forEach(file => {
