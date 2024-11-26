@@ -19,16 +19,6 @@ export async function apiGet<T>(endpoint: string) {
     }
 }
 
-export async function apiGetBlob(endpoint: string): Promise<Blob | Error> {
-    try {
-        const result = await fetch(apiBaseUrl() + endpoint);
-        if (!result.ok) throw new Error();
-        return await result.blob();
-    } catch (e) {
-        return error(`Request /api/${endpoint} failed`, e);
-    }
-}
-
 export async function apiGetText(endpoint: string): Promise<string | Error> {
     try {
         const result = await fetch(apiBaseUrl() + endpoint);
@@ -39,16 +29,55 @@ export async function apiGetText(endpoint: string): Promise<string | Error> {
     }
 }
 
-export async function apiPost<T>(endpoint: string, params: URLSearchParams | FormData) {
+export async function apiGetBlob(endpoint: string): Promise<Blob | Error> {
+    try {
+        const result = await fetch(apiBaseUrl() + endpoint);
+        if (!result.ok) throw new Error();
+        return await result.blob();
+    } catch (e) {
+        return error(`Request /api/${endpoint} failed`, e);
+    }
+}
+
+export async function apiGetArrayBuffer(endpoint: string): Promise<ArrayBuffer | Error> {
+    try {
+        const result = await fetch(apiBaseUrl() + endpoint);
+        if (!result.ok) throw new Error();
+        return await result.arrayBuffer();
+    } catch (e) {
+        return error(`Request /api/${endpoint} failed`, e);
+    }
+ }
+
+export async function apiPost<T>(
+    endpoint: string,
+    params: URLSearchParams | FormData | JsonValue | Blob | ArrayBuffer,
+    contentType?: string
+) {
     let headers: HeadersInit = {};
-    let body: string | FormData;
+    let body: string | FormData | Blob | ArrayBuffer;
 
     if (params instanceof URLSearchParams) {
         headers = { "Content-Type": "application/x-www-form-urlencoded" };
         body = params.toString();
-    } else {
+    } else if (params instanceof FormData) {
         body = params;
+    } else if (params instanceof Blob || params instanceof ArrayBuffer) {
+        // Handle binary data
+        if (contentType) {
+            headers = { "Content-Type": contentType };
+        } else if (params instanceof Blob) {
+            headers = { "Content-Type": params.type || "application/octet-stream" };
+        } else {
+            headers = { "Content-Type": "application/octet-stream" };
+        }
+        body = params;
+    } else {
+        // Handle JSON data
+        headers = { "Content-Type": "application/json" };
+        body = JSON.stringify(params);
     }
+
     try {
         const result = await fetch(apiBaseUrl() + endpoint, {
             method: "POST",
@@ -60,22 +89,6 @@ export async function apiPost<T>(endpoint: string, params: URLSearchParams | For
     } catch (e) {
         return error(`Request /api/${endpoint} failed`, e);
     }
-}
-
-export function toUrlBody(params: JsonValue) {
-    const urlParams = new URLSearchParams();
-    for (const key in params) {
-        const value = params[key];
-        const type = typeof value;
-        if (type == "string" || type == "number" || type == "boolean") {
-            urlParams.append(key, value.toString());
-        } else if (typeof value == "object") {
-            urlParams.append(key, JSON.stringify(value));
-        } else {
-            throw new Error("Unsupported value type: " + typeof value);
-        }
-    }
-    return urlParams;
 }
 
 export class Api {

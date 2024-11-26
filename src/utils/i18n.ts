@@ -1,20 +1,12 @@
+export type LanguageCode = "en";
+
 export interface Messages {
-    "Whoops, that page doesn't exist": string;
-    "Couldn't load mesage": string;
-    "Invalid stream": string;
-    "Sorry, an unknown error occured": string;
-    "End of list": string;
+   "Hello world": string
 }
 
 const english: Messages = {
-    "Whoops, that page doesn't exist": "Whoops, that page doesn't exist",
-    "Couldn't load mesage": "Couldn't load mesage",
-    "Invalid stream": "Invalid stream",
-    "Sorry, an unknown error occured": "Sorry, an unknown error occured",
-    "End of list": "End of list",
+    "Hello world": "Hello world"
 };
-
-export type LanguageCode = "en";
 
 const translations: Record<LanguageCode, Messages> = {
     en: english,

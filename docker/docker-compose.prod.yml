@@ -2,8 +2,8 @@ version: "3"
 services:
     web:
         environment:
-            VIRTUAL_HOST: __app_domain__,www.__app_domain__
-            LETSENCRYPT_HOST: __app_domain__,www.__app_domain__
+            VIRTUAL_HOST: __app_host_list__
+            LETSENCRYPT_HOST: __app_host_list__
             LETSENCRYPT_EMAIL: __app_email__
         networks:
             - reverse_proxy

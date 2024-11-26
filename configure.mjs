@@ -6,13 +6,43 @@ const error = (msg) => {
     process.exit(-1);
 };
 
-const replaceInFile = (map, filePath) => {
+const processFeatureSections = (content, features) => {
+    for (const [featureName, enabled] of Object.entries(features)) {
+        const startMarker = `__feature_${featureName}__start__`;
+        const endMarker = `__feature_${featureName}__end__`;
+
+        const lines = content.split('\n');
+        const processedLines = [];
+
+        let insideFeatureSection = false;
+
+        for (const line of lines) {
+            if (line.includes(startMarker)) {
+                insideFeatureSection = true;
+            } else if (line.includes(endMarker)) {
+                insideFeatureSection = false;
+            } else if (!insideFeatureSection || enabled) {
+                processedLines.push(line);
+            }
+        }
+        content = processedLines.join('\n');
+    }
+    return content;
+};
+
+const replaceInFile = (map, filePath, features) => {
     console.log("Replacing placeholders in " + filePath);
     let content = fs.readFileSync(filePath, "utf8");
+
+    if (features) {
+        content = processFeatureSections(content, features);
+    }
+
     for (const [key, value] of map.entries()) {
         const regex = new RegExp(key, "g");
         content = content.replace(regex, value);
     }
+
     fs.writeFileSync(filePath, content, "utf8");
 };
 
@@ -27,6 +57,19 @@ const generateSecurePassword = (length = 32) => {
     return password;
 };
 
+const isRootDomain = (domain) => {
+    const parts = domain.split('.');
+    return parts.length <= 1;
+};
+
+const getHostList = (domain, nginx) => {
+    if (isRootDomain(domain)) {
+        return nginx ? `${domain},www.${domain}` : `${domain} www.${domain}`;
+    } else {
+        return domain;
+    }
+};
+
 const pkg = JSON.parse(fs.readFileSync("package.json"));
 console.log("Applying config", pkg.app);
 
@@ -38,6 +81,10 @@ if (!pkg.app.hostDir) error("Missing host dir, e.g. /home/badlogic");
 if (!pkg.app.serverPort) error("Missing server port, e.g. 3333");
 if (!pkg.app.domain) error("Missing domain, e.g. myapp.io");
 if (!pkg.app.email) error("Missing email");
+
+const features = {
+    db: pkg.app.needsDb ?? true,
+};
 
 const dbName = pkg.app.name.toUpperCase() + "_DB";
 const dbUser = pkg.app.name.toUpperCase() + "_DB_USER";
@@ -51,6 +98,8 @@ const replacements = new Map([
     ["__app_host_dir__", pkg.app.hostDir],
     ["__app_server_port__", pkg.app.serverPort],
     ["__app_domain__", pkg.app.domain],
+    ["__app_host_list__", getHostList(pkg.app.domain, false)],
+    ["__app_host_list_nginx__", getHostList(pkg.app.domain, true)],
     ["__app_email__", pkg.app.email],
     ["__app_secrets__", secrets],
     ["__app_db_name__", "${" + dbName + "}"],
@@ -58,24 +107,33 @@ const replacements = new Map([
     ["__app_db_password__", "${" + dbPassword + "}"],
 ]);
 
-console.log("Replacements", replacements);
+console.log("Features enabled:", features);
+console.log("Replacements:", replacements);
 
-replaceInFile(replacements, "package.json");
-replaceInFile(replacements, "publish.sh");
-replaceInFile(replacements, "stats.sh");
-replaceInFile(replacements, "docker/docker-compose.base.yml");
-replaceInFile(replacements, "docker/docker-compose.prod.yml");
-replaceInFile(replacements, "docker/nginx.conf");
-replaceInFile(replacements, "docker/control.sh");
-replaceInFile(replacements, "html/index.html");
-replaceInFile(replacements, "html/manifest.json");
+const filesToProcess = [
+    "package.json",
+    "publish.sh",
+    "stats.sh",
+    "docker/docker-compose.base.yml",
+    "docker/docker-compose.prod.yml",
+    "docker/nginx.conf",
+    "docker/control.sh",
+    "html/index.html",
+    "html/manifest.json",
+];
 
-console.log("ATTENTION!");
-console.log("Please add the following environment variables to your environment");
-console.log();
-console.log(`echo '' >> ~/.zshrc`);
-console.log(`echo '' >> ~/.zshrc`);
-console.log(`echo 'export ${dbName}="${dbName.toLowerCase()}"' >> ~/.zshrc`);
-console.log(`echo 'export ${dbUser}="${dbUser.toLowerCase()}"' >> ~/.zshrc`);
-console.log(`echo 'export ${dbPassword}="${generateSecurePassword()}"' >> ~/.zshrc`);
-console.log(`source ~/.zshrc`);
+filesToProcess.forEach(file => {
+    replaceInFile(replacements, file, features);
+});
+
+if (features.db) {
+    console.log("ATTENTION!");
+    console.log("Please add the following environment variables to your environment");
+    console.log();
+    console.log(`echo '' >> ~/.zshrc`);
+    console.log(`echo '' >> ~/.zshrc`);
+    console.log(`echo 'export ${dbName}="${dbName.toLowerCase()}"' >> ~/.zshrc`);
+    console.log(`echo 'export ${dbUser}="${dbUser.toLowerCase()}"' >> ~/.zshrc`);
+    console.log(`echo 'export ${dbPassword}="${generateSecurePassword()}"' >> ~/.zshrc`);
+    console.log(`source ~/.zshrc`);
+}

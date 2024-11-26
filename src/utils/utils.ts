@@ -102,11 +102,6 @@ export function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function isVideoFile(fileName: string): boolean {
-    const videoExtensions = [".mp4", ".mkv", ".avi", ".flv", ".mov", ".wmv", ".webm"];
-    return videoExtensions.some((ext) => fileName.toLowerCase().endsWith(ext));
-}
-
 export function getYear(utc: number) {
     return new Date(utc * 1000).getFullYear();
 }

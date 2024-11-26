@@ -1,7 +1,6 @@
 import { TemplateResult } from "lit";
 import { Key, pathToRegexp } from "path-to-regexp";
-import { StreamView } from "./streamviews.js";
-import { dom, getScrollParent } from "./ui-components.js";
+import { dom, getScrollParent} from "./ui-components.js";
 
 export class Route<T extends HTMLElement> {
     readonly regexp: RegExp;
@@ -170,9 +169,6 @@ export class Router {
         if (page.page.style.display == "none") return;
         page.srcollTop = getScrollParent(this.outlet)!.scrollTop;
         page.display = page.page.style.display;
-        const streamViews = Array.from(page.page.querySelectorAll("*")).filter((el) => el instanceof StreamView) as StreamView<any>[];
-        for (const streamView of streamViews) streamView.disableIntersector = true;
-        // page.page.style.display = "none";
         page.page.remove();
     }
 
@@ -180,9 +176,6 @@ export class Router {
         this.pageStack = this.pageStack.filter((other) => other != page);
         this.pageStack.push(page);
         this.outlet.append(page.page);
-        const streamViews = Array.from(page.page.querySelectorAll("*")).filter((el) => el instanceof StreamView) as StreamView<any>[];
-        for (const streamView of streamViews) streamView.disableIntersector = false;
-        // page.page.style.display = page.display;
         queueMicrotask(() => (getScrollParent(this.outlet)!.scrollTop = page.srcollTop));
     }
 

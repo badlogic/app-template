@@ -3,11 +3,11 @@ set -e
 npm run build
 host=__app_host__
 host_dir=__app_host_dir__/__app_domain__
-current_date=$(date "+%Y-%m-%d %H:%M:%S")
-commit_hash=$(git rev-parse HEAD)
-echo "{\"date\": \"$current_date\", \"commit\": \"$commit_hash\"}" > html/version.json
 
+__feature_db_start__
 ssh -t $host "mkdir -p $host_dir/docker/data/postgres"
+__feature_db_end__
+
 rsync -avz --exclude node_modules --exclude .git --exclude data --exclude docker/data ./ $host:$host_dir
 
 if [ "$1" == "server" ]; then

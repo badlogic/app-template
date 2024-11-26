@@ -5,7 +5,7 @@ Used to create new (progressive) web apps and deploy them to a server running Do
 ### Development
 
 1. Install & run Docker
-2. Install NodeJS +19
+2. Install NodeJS +20
 
 ```
 npm run dev

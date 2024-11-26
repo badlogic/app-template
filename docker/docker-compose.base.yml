@@ -1,6 +1,10 @@
 version: "3"
+
+__features_db_start__
 volumes:
     db_data:
+__features_db_end__
+
 services:
     web:
         image: nginx:alpine
@@ -21,16 +25,24 @@ services:
         stop_grace_period: 0s
         environment:
             PORT: __app_server_port__
+
+            __features_db_start__
             DATABASE: __app_db_name__
             DATABASE_USER: __app_db_user__
             DATABASE_PASSWORD: __app_db_password__
+            __features_db_end__
+
         volumes:
             - ./data:/data
             - ../:/app
+        __features_db_start__
         links:
             - db
+        __features_db_end__
         networks:
             - network
+
+    __features_db_start__
     db:
         image: postgres:16-alpine
         restart: always
@@ -42,6 +54,7 @@ services:
             - db_data:/var/lib/postgresql/data
         networks:
             - network
+    __features_db_end__
 
 networks:
     network:

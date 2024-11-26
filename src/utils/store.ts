@@ -1,16 +1,7 @@
-export type DevPreferences = {
-    enabled: boolean;
-};
-
-export type SynologyPreferences = {
-    downloadsFolder: string;
-};
-
 export type Theme = "dark" | "light";
 
 export type Settings = {
     theme: Theme;
-    devPrefs: DevPreferences;
 };
 
 export type StoreKey = "user" | "settings";
@@ -23,9 +14,6 @@ export class Store {
         settings = settings ?? ({} as Settings);
 
         settings.theme = settings.theme ?? "dark";
-
-        settings.devPrefs = settings.devPrefs ?? ({} as DevPreferences);
-        settings.devPrefs.enabled = settings.devPrefs.enabled ?? false;
 
         Store.set<Settings>("settings", settings);
     }
@@ -62,14 +50,6 @@ export class Store {
         Store.set("settings", { ...Store.get<Settings>("settings"), theme });
 
         return theme;
-    }
-
-    static getDevPrefs() {
-        return Store.get<Settings>("settings")?.devPrefs;
-    }
-
-    static setDevPrefs(devPrefs: DevPreferences) {
-        Store.set("settings", { ...Store.get<Settings>("settings"), devPrefs });
     }
 }
 

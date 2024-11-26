@@ -7,11 +7,15 @@ import * as fs from "fs";
 import * as http from "http";
 import multer from "multer";
 import WebSocket, { WebSocketServer } from "ws";
-import { Pool } from "pg";
 import { sleep } from "../utils/utils.js";
+__feature_db_start__
+import { Pool } from "pg";
+__feature_db_end__
 const upload = multer({ storage: multer.memoryStorage() });
 
 const port = process.env.PORT ?? 3333;
+
+__feature_db_start__
 const dbName = process.env.DATABASE;
 if (!dbName) {
     console.error("Environment variable DATABASE missing");
@@ -35,12 +39,15 @@ const pool = new Pool({
     password: dbPassword,
     port: 5432,
 });
+__feature_db_end__
 
 (async () => {
+    __feature_db_start__
     const result = await connectWithRetry(5, 3000);
     if (result instanceof Error) {
         process.exit(-1);
     }
+    __feature_db_end__
 
     if (!fs.existsSync("docker/data")) {
         fs.mkdirSync("docker/data");
@@ -64,6 +71,7 @@ const pool = new Pool({
     setupLiveReload(server);
 })();
 
+__feature_db_start_
 async function connectWithRetry(maxRetries = 5, interval = 2000) {
     let retries = 0;
     while (retries < maxRetries) {
@@ -86,6 +94,7 @@ async function connectWithRetry(maxRetries = 5, interval = 2000) {
         }
     }
 }
+__feature_db_end__
 
 function setupLiveReload(server: http.Server) {
     const wss = new WebSocketServer({ server });
