@@ -1,11 +1,11 @@
 export type LanguageCode = "en";
 
 export interface Messages {
-   "Hello world": string
+   "Whoops, that page doesn't exist": string
 }
 
 const english: Messages = {
-    "Hello world": "Hello world"
+    "Whoops, that page doesn't exist": "Whoops, that page doesn't exist"
 };
 
 const translations: Record<LanguageCode, Messages> = {
