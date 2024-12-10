@@ -38,6 +38,9 @@ services:
         __feature_db_start__
         links:
             - db
+        depends_on:
+            db:
+                condition: service_healthy
         __feature_db_end__
         networks:
             - network
@@ -54,6 +57,11 @@ services:
             - db_data:/var/lib/postgresql/data
         networks:
             - network
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U __app_db_user__ -d __app_db_name__"]
+            interval: 1s
+            timeout: 5s
+            retries: 5
     __feature_db_end__
 
 networks:

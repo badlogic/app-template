@@ -5,11 +5,14 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                background: "var(--background)",
-                text: "var(--text)",
+                bg: "var(--bg)",
+                fg: "var(--fg)",
                 muted: "var(--muted)",
-                link: "var(--link)",
-                border: "var(--border)",
+                "muted-strong": "var(--muted-strong)",
+                primary: "var(--primary)",
+                "primary-fg": "var(--primary-fg)",
+                "primary-muted": "var(--primary-muted)",
+                divider: "var(--divider)",
             },
             screens: {
                 pwa: { raw: "(display-mode: standalone)" },

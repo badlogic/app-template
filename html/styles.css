@@ -2,76 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light theme variables */
 :root {
-    --background: #ffffff;
-    --text: #111111;
-    --muted: #4b5563;
-    --link: #3b82f6;
-    --border: ##9ca3af;
+    --bg: #ffffff;
+    --fg: #111;
+    --muted: #666;
+    --muted-strong: #888;
+    --primary: #3b82f6;
+    --primary-fg: #ffffff;
+    --primary-muted: #94bbfa;
+    --divider: #ccc;
 }
 
-/* Dark theme variables */
 .dark {
-    --background: #111111;
-    --text: #ffffff;
-    --muted: #4b5563;
-    --link: #3b82f6;
-    --border: #333;
+    --bg: #111;
+    --fg: #fff;
+    --muted: #666;
+    --muted-strong: #888;
+    --primary: #3b82f6;
+    --primary-fg: #ffffff;
+    --primary-muted: #94bbfa;
+    --divider: #444;
 }
 
 @layer base {
-    html,
-    body {
-        @apply w-full leading-normal;
-        @apply text-text
-    }
-
-    .hidden {
-        display: none;
-    }
-
     h1 {
-        @apply font-bold text-xl;
+        @apply text-4xl font-bold mb-4;
     }
 
     h2 {
-        @apply font-bold text-lg;
+        @apply text-2xl font-semibold mb-3;
     }
 
     h3 {
-        @apply font-bold;
+        @apply text-xl font-medium mb-2;
     }
 
-    a {
-        @apply break-words hover:underline;
-        @apply text-link;
+    h4 {
+        @apply text-lg font-medium mb-2;
+    }
+
+    input[type="text"] {
+        @apply px-4 py-2 border border-divider outline-none rounded shadow-sm;
+        @apply disabled:text-muted;
+    }
+
+    textarea {
+        @apply rounded;
     }
 }
 
 @layer components {
-    * {
-        @apply outline-none;
+    .btn {
+        @apply px-4 py-2 bg-primary text-primary-fg rounded shadow-sm;
+    }
+
+    .btn[disabled] {
+        @apply bg-primary-muted cursor-not-allowed;
     }
 }
 
 @layer utilities {
-    .no-touch-highlight {
-        -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
-    }
-
-    .disable-pointer-events {
-        pointer-events: none;
-    }
-
-    .enable-pointer-events {
-        pointer-events: all;
-    }
-
-    .break-any {
-        overflow-wrap: anywhere;
-    }
-
     i.icon {
         display: flex;
         align-items: center;
